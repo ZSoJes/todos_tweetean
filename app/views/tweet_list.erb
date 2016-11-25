@@ -1,0 +1,11 @@
+<%if @busqueda%>
+  <a href="/<%= session[:username]%>">
+    <button class="boton">Listo para Regresar</button>
+  </a>
+<%end%>
+
+<% if @tweets %>
+  <% @tweets.reverse_each do |tweet| %> 
+    <div class="list_tuits"> <%= tweet.tweet_w %> </div>
+  <% end %>
+<% end %>

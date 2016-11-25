@@ -1,0 +1,54 @@
+<section class="spinner-2" style="display:none">
+  <div class="spinner"></div>
+  <!-- author de spinner http://callmenick.com/ -->
+  <!-- link callmenick.com/post/css-spinners-loaders -->
+</section>
+
+<div id="salir"><form method="post" action="/exit"><button class="boton">Cerrar Sesion</button></form></div>
+
+<br><br>
+
+<div style="margin: 0; padding: 10px;border-radius: 10px;background:#bada55;">
+  <form method="post" action="/buscar">
+    <input type="text" name="userName" value="<%= session[:username]%>" style="background: yellowgreen">
+    <input type="submit"  value="Buscar Usuario!" class="boton">
+  </form>
+</div>
+
+<br><br>
+
+<div id="caja">
+  <form method="post" action="/fetch" id="twitter_handle"> <!-- action="/fetch"-->
+    <input type="text" name="userName" value="<%= @user %>" readonly>
+    <textarea id="tuit" name="mensaje" placeholder="Comenatrio"></textarea>
+    <br>
+    <input type="submit" class="boton" value="Enviar">
+    <span style="margin:0 19.5%"></span>
+  </form>
+</div>
+
+<a href="/actualiza_lista">
+  <button class="boton_flotante" style="right: 10%">Actualizar Tuits</button>
+</a>
+
+<br>
+
+<div class="head">
+  <img src="<%= @url %>" alt="avatar" width="200" height="200">
+  <p><center><%=  @full_name   %></center></p>
+</div>
+
+<div id=nuevo_tuit>
+  <%= erb :tweet_list, layout: false%>
+</div>
+
+<!-- :::::: Modal :::::: -->
+<div id="myModal" class="modal">
+  <!-- Modal content -->
+  <div class="modal-content">
+    <span class="close">x</span>
+    <h1>Aviso!</h1>
+    <h2></h2>
+  </div>
+  <!-- Modal content -->
+</div>

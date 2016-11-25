@@ -1,0 +1,6 @@
+::crear un archivo yaml con los hashes de consumer_key, consumer_secret, access_tokendentro de /config
+bundle update
+
+rake db:create
+
+rake db:migrate
