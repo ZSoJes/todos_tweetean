@@ -20,6 +20,7 @@ require 'oauth'
 
 # Rquire servidor Redis y sidekiq
 require 'sidekiq'
+require 'sidekiq/api'
 require 'redis'
 
 require 'pg'

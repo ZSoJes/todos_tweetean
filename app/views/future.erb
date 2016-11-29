@@ -1,0 +1,15 @@
+<h1>Bienvenido al Tweet del Futuro</h1>
+
+<form action="/late/ya/que" method="post" class="caja">
+	<label>Escribe un tweet:</label>
+		<textarea id="tuit" name="mensaje" placeholder="Comenatrio"></textarea>
+	<label>Indica en segundos cuando se publicara:</label>
+  		<input type="text" name="time">
+  	<input type="submit" value="enviar despues" class="boton">
+</form>
+
+<br>
+<br>
+  <a href="/<%= session[:username]%>">
+    <button class="boton">Listo para Regresar</button>
+  </a>

@@ -17,9 +17,18 @@ th {
   border-radius: 10px;
   border: none;
 }
-button.boton{
+#boton_salir{
   top:0;
   left:0%;
+  position: fixed;
+  display: block;
+  background-color: #5cbf2a;
+  border-radius: 10px;
+  border:none;
+}
+#boton_future{
+  top:0;
+  right:0%;
   position: fixed;
   display: block;
   background-color: #5cbf2a;
@@ -199,4 +208,9 @@ section {
   to {
     transform: rotate(360deg);
   }
+}
+label{
+  font-weight: bold;
+  font-size: 20px;
+  color:white;
 }

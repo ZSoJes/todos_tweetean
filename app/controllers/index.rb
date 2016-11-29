@@ -21,34 +21,37 @@ end
 
 get '/sign_in' do
   puts "Comenzar login"
-  puts "*"*100
-# El método `request_token` es uno de los helpers
-# Esto lleva al usuario a una página de twitter donde sera atentificado con sus credenciales
-redirect request_token.authorize_url(:oauth_callback => "http://#{host_and_port}/auth")
-# Cuando el usuario otorga sus credenciales es redirigido a la callback_url 
-# Dentro de params twitter regresa un 'request_token' llamado 'oauth_verifier'
+  puts "  ++~~++ "*100
+  # El método `request_token` es uno de los helpers
+  # Esto lleva al usuario a una página de twitter donde sera atentificado con sus credenciales
+  redirect request_token.authorize_url(:oauth_callback => "http://#{host_and_port}/auth")
+  # Cuando el usuario otorga sus credenciales es redirigido a la callback_url 
+  # Dentro de params twitter regresa un 'request_token' llamado 'oauth_verifier'
 end
 
 get '/auth' do
   puts "Comenzar autenticacion"
-  puts "+"*100
-# Volvemos a mandar a twitter el 'request_token' a cambio de un 'access_token' 
-# Este 'access_token' lo utilizaremos para futuras comunicaciones.   
-@access_token = request_token.get_access_token(:oauth_verifier => params[:oauth_verifier])
-# Despues de utilizar el 'request token' ya podemos borrarlo, porque no vuelve a servir. 
+  puts " +-+ "*100
+  # Volvemos a mandar a twitter el 'request_token' a cambio de un 'access_token' 
+  # Este 'access_token' lo utilizaremos para futuras comunicaciones.   
+  @access_token = request_token.get_access_token(:oauth_verifier => params[:oauth_verifier])
+  # Despues de utilizar el 'request token' ya podemos borrarlo, porque no vuelve a servir. 
 
-puts "-"*100
-session.delete(:request_token)
+  puts "-"*100
+  session.delete(:request_token)
 
-session[:oauth_token] = @access_token.params['oauth_token']
-session[:oauth_token_secret] = @access_token.params['oauth_token_secret']
-session[:username] = "@#{@access_token.params['screen_name']}"
+  session[:oauth_token] = @access_token.params['oauth_token']
+  session[:oauth_token_secret] = @access_token.params['oauth_token_secret']
+  session[:username] = "@#{@access_token.params['screen_name']}"
 
-puts session[:username]
-puts "-"*100
+  puts session[:username]
+  puts "-"*100
 
-TwitterUser.create(name_user: session[:username],token: session[:oauth_token],token_secret: session[:oauth_token_secret])
-
+  user_data = TwitterUser.user_data(session[:username])
+  TwitterUser.create(id: user_data.id,
+                     name_user: session[:username],
+                     token: session[:oauth_token],
+                     token_secret: session[:oauth_token_secret])
 # Aquí es donde deberás crear la cuenta del usuario y guardar usando el 'access_token' lo siguiente:
 # nombre, oauth_token y oauth_token_secret
 
@@ -67,6 +70,8 @@ get '/:username' do
   tuit_user = TwitterUser.find_or_create_by(name_user: session[:username])
   tuit_log = Tweet.where(id: tuit_user.id)                                 # busca los twits del este usuario en bd
   user_data = twitter_account.user_search(session[:username]).first                 # busca en API todo de usuario
+  session[:serie_num_id] = user_data.id
+  puts session[:serie_num_id]
 
 
   user = TwitterUser.find_by(name_user: @user)
@@ -150,6 +155,29 @@ post "/exit" do
   redirect to "/"
 end
 
+get '/late/ya' do
+  est = params[:estado]
+  puts "estado: #{est}"
+  puts "uso get"
+  puts "*"*100
+  puts session[:serie_num_id]
+  erb :future
+end
+
+post '/late/ya/que' do
+  tweet = params[:mensaje]
+  time = params[:time]
+
+  user = TwitterUser.find_by(name_user: session[:username])
+  id = user.tweet_later(tweet, session[:serie_num_id])#, time)
+
+  puts "*-*~~~~~~~+-+"*50
+  puts "#{id}"
+  puts job_is_complete(id)
+  redirect to "/status/#{id}"
+  # id
+end
+
 get '/status/:job_id' do
   # regresa el status de un job a una petición AJAX
   job_id = params[:job_id]
@@ -158,5 +186,6 @@ get '/status/:job_id' do
   else
     @estado = false
   end
+  redirect to '/late/ya'
 end
 
