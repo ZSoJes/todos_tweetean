@@ -18,6 +18,10 @@ require 'yaml'
 # Require gem of OAuth
 require 'oauth'
 
+# Rquire servidor Redis y sidekiq
+require 'sidekiq'
+require 'redis'
+
 require 'pg'
 require 'active_record'
 require 'logger'

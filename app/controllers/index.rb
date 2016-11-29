@@ -61,36 +61,30 @@ get '/:username' do
   puts "Cargando pagina...."
   puts "*"*100
   @busqueda = false;
-  CLIENT = Twitter::REST::Client.new do |config|
-    config.consumer_key        = ENV['TWITTER_KEY']
-    config.consumer_secret     = ENV['TWITTER_SECRET']
-    config.access_token        = session[:oauth_token]
-    config.access_token_secret = session[:oauth_token_secret]
-  end
 
   @user = session[:username]
 
-tuit_user = TwitterUser.find_or_create_by(name_user: session[:username])
-tuit_log = Tweet.where(id: tuit_user.id)                                 # busca los twits del este usuario en bd
-user_data = CLIENT.user_search(session[:username]).first                 # busca en API todo de usuario
+  tuit_user = TwitterUser.find_or_create_by(name_user: session[:username])
+  tuit_log = Tweet.where(id: tuit_user.id)                                 # busca los twits del este usuario en bd
+  user_data = twitter_account.user_search(session[:username]).first                 # busca en API todo de usuario
 
 
-user = TwitterUser.find_by(name_user: @user)
-user.user_id_by_twitter = user_data.id
-user.save
+  user = TwitterUser.find_by(name_user: @user)
+  user.user_id_by_twitter = user_data.id
+  user.save
 
 
-@full_name = user_data.name                                              # nombre
-@url = user_data.profile_image_url_https("original")                     # avatar
+  @full_name = user_data.name                                              # nombre
+  @url = user_data.profile_image_url_https("original")                     # avatar
 
 
-@tweets_c = CLIENT.user_timeline(user_data.user_name)
+  @tweets_c = twitter_account.user_timeline(user_data.user_name)
 
-if tuit_log.empty?                                                       # La base de datos no tiene tweets?
-  @tweets_c.reverse_each do  |t|
-    Tweet.create(twitter_user_id: user_data.id, tweet_w: t.text)
+  if tuit_log.empty?                                                       # La base de datos no tiene tweets?
+    @tweets_c.reverse_each do  |t|
+      Tweet.create(twitter_user_id: user_data.id, tweet_w: t.text)
+    end
   end
-end
 
 @tiempo = Time.now - @tweets_c.first.created_at                          #desde el ultimo tuit
 if Time.now - @tweets_c.first.created_at > 500                           # si los tuits estan desactualizados
@@ -112,15 +106,8 @@ post '/fetch' do
   puts "Publicar un nuevo tweet..."
   puts "*"*100
 
-  CLIENT = Twitter::REST::Client.new do |config|
-    config.consumer_key        = ENV['TWITTER_KEY']
-    config.consumer_secret     = ENV['TWITTER_SECRET']
-    config.access_token        = session[:oauth_token]
-    config.access_token_secret = session[:oauth_token_secret]
-  end
-
   unless @tweet.blank?
-    CLIENT.update(@tweet)
+    twitter_account.update(@tweet)
   end
 end
 
@@ -128,21 +115,13 @@ post '/actualiza_lista' do
 puts "Recargar lista de tuits..."
 puts "*"*100
 
-CLIENT = Twitter::REST::Client.new do |config|
-  config.consumer_key        = ENV['TWITTER_KEY']
-  config.consumer_secret     = ENV['TWITTER_SECRET']
-  config.access_token        = session[:oauth_token]
-  config.access_token_secret = session[:oauth_token_secret]
-end
-
-user_data = CLIENT.user_search(session[:username]).first
-@tweets_c = CLIENT.user_timeline(user_data.user_name)
-
-@tweets_c.reverse_each do  |t|
-  if Tweet.find_by(tweet_w: t.text).nil?
-    Tweet.create(twitter_user_id: user_data.id, tweet_w: t.text)
+  user_data = twitter_account.user_search(session[:username]).first
+  @tweets_c = twitter_account.user_timeline(user_data.user_name)
+  @tweets_c.reverse_each do  |t|
+    if Tweet.find_by(tweet_w: t.text).nil?
+      Tweet.create(twitter_user_id: user_data.id, tweet_w: t.text)
+    end
   end
-end
 
 @tweets = Tweet.where(twitter_user_id: user_data.id).order(:created_at).last(10)
 erb :tweet_list, layout: false 
@@ -152,15 +131,8 @@ post '/buscar' do
   puts params[:userName]
   @busqueda = true;
 
-  CLIENT = Twitter::REST::Client.new do |config|
-    config.consumer_key        = ENV['TWITTER_KEY']
-    config.consumer_secret     = ENV['TWITTER_SECRET']
-    config.access_token        = session[:oauth_token]
-    config.access_token_secret = session[:oauth_token_secret]
-  end
-
-  user_data = CLIENT.user_search(params[:userName]).first
-  @tweets_c = CLIENT.user_timeline(user_data.user_name)
+  user_data = twitter_account.user_search(params[:userName]).first
+  @tweets_c = twitter_account.user_timeline(user_data.user_name)
   @tweets_c.reverse_each do  |t|
     if Tweet.find_by(tweet_w: t.text).nil?
       Tweet.create(twitter_user_id: user_data.id, tweet_w: t.text)
@@ -177,3 +149,14 @@ post "/exit" do
   session.delete(:oauth_token_secret)
   redirect to "/"
 end
+
+get '/status/:job_id' do
+  # regresa el status de un job a una petición AJAX
+  job_id = params[:job_id]
+  if job_is_complete(job_id)
+    @estado = true
+  else
+    @estado = false
+  end
+end
+

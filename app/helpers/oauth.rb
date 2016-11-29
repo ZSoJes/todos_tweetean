@@ -43,3 +43,27 @@ def request_token
   end
   session[:request_token]
 end
+
+def twitter_account
+  # genera el acceso a los datos del usuario, permitiendo mostrarlos con la API
+  client = Twitter::REST::Client.new do |config|
+    config.consumer_key        = ENV['TWITTER_KEY']
+    config.consumer_secret     = ENV['TWITTER_SECRET']
+    config.access_token        = session[:oauth_token]
+    config.access_token_secret = session[:oauth_token_secret]
+  end
+end
+
+def job_is_complete(jid)
+  # Revisa si la tarea se encuentra pendiente
+  pending = Sidekiq::ScheduledSet.new
+  return false if pending.find { |job| job.jid == jid }
+  # Revisa si la tarea se encuentra en la cola 
+  waiting = Sidekiq::Queue.new 
+  return false if waiting.find { |job| job.jid == jid }
+  # Revisa si la tarea se encuentra en proceso 
+  working = Sidekiq::Workers.new
+  return false if working.find { |worker, info| info["payload"]["jid"] == jid }
+  # Si no se cumplió ninguna de las anteriores entonces la tarea ya fue procesada.  
+  true
+end

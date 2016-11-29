@@ -18,6 +18,10 @@ gem 'activerecord'
 # Usar OAuth
 gem 'oauth'
 
+# Usar Sidekiq & Redis
+gem 'sidekiq'
+gem 'redis'
+
 gem 'rake'
 
 gem 'shotgun'
