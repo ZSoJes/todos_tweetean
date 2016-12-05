@@ -3,12 +3,6 @@ class TwitterUser < ActiveRecord::Base
   # Remember to create a migration!
   has_many :tweets
 
-  def user_data(user_name) 
-  	# Llama al helper twitter_account y con la api busca todos los datos del usuario en cuestion
-  	user_data = twitter_account.user_search(user_name).first
-  	# busca en API todo del usuario
-  end
-
   def tweet_later(text,user_id)
     # tweet = # Crea un tweet relacionado con este usuario en la tabla de tweets
     # TweetWorker.perform_in(1.minutes, 'mike', 1)

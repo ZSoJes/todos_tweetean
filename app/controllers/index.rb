@@ -46,64 +46,61 @@ get '/auth' do
 
   puts session[:username]
   puts "-"*100
+  miUsuario = twitterUser_data(session[:username])
+  
+  existeUsuario = TwitterUser.find_by(name_user: session[:username])
 
-  user_data = TwitterUser.user_data(session[:username])
-  TwitterUser.create(id: user_data.id,
+  unless existeUsuario.nil?
+    existeUsuario.token = session[:oauth_token]
+    existeUsuario.token_secret = session[:oauth_token_secret]
+    existeUsuario.save
+  else
+    TwitterUser.create(id: miUsuario.id,
                      name_user: session[:username],
                      token: session[:oauth_token],
                      token_secret: session[:oauth_token_secret])
-# Aquí es donde deberás crear la cuenta del usuario y guardar usando el 'access_token' lo siguiente:
-# nombre, oauth_token y oauth_token_secret
+  end
+  # Aquí es donde deberás crear la cuenta del usuario y guardar usando el 'access_token' lo siguiente:
+  # nombre, oauth_token y oauth_token_secret
 
-redirect to "/#{session[:username]}"
-# No olvides crear su sesión 
+  redirect to "/#{session[:username]}"
+  # No olvides crear su sesión 
+  # Para el signout no olvides borrar el hash de session
 end
-# Para el signout no olvides borrar el hash de session
 
 get '/:username' do
   puts "Cargando pagina...."
   puts "*"*100
   @busqueda = false;
 
-  @user = session[:username]
+  # TwitterUser.find_or_create_by(name_user: session[:username])             # ver los datos que retengo
+  miUsuario = twitterUser_data(session[:username])                         # ver los datos que tiene twitter del usuario
+  tuit_log = Tweet.where(id: miUsuario.id)                                 # busca los twits del este usuario en bd
 
-  tuit_user = TwitterUser.find_or_create_by(name_user: session[:username])
-  tuit_log = Tweet.where(id: tuit_user.id)                                 # busca los twits del este usuario en bd
-  user_data = twitter_account.user_search(session[:username]).first                 # busca en API todo de usuario
-  session[:serie_num_id] = user_data.id
-  puts session[:serie_num_id]
-
-
-  user = TwitterUser.find_by(name_user: @user)
-  user.user_id_by_twitter = user_data.id
-  user.save
+  @full_name = miUsuario.name                                              # nombre
+  @url = miUsuario.profile_image_url_https("original")                     # avatar
 
 
-  @full_name = user_data.name                                              # nombre
-  @url = user_data.profile_image_url_https("original")                     # avatar
-
-
-  @tweets_c = twitter_account.user_timeline(user_data.user_name)
+  @tweet = twitter_account.user_timeline(session[:username])
 
   if tuit_log.empty?                                                       # La base de datos no tiene tweets?
-    @tweets_c.reverse_each do  |t|
-      Tweet.create(twitter_user_id: user_data.id, tweet_w: t.text)
+    @tweet.reverse_each do  |t|
+      Tweet.create(twitter_user_id: miUsuario.id, tweet: t.text)
     end
   end
 
-@tiempo = Time.now - @tweets_c.first.created_at                          #desde el ultimo tuit
-if Time.now - @tweets_c.first.created_at > 500                           # si los tuits estan desactualizados
-  @tweets_c.reverse_each do  |t|
-    if Tweet.find_by(tweet_w: t.text).nil?
-      Tweet.create(twitter_user_id: user_data.id, tweet_w: t.text)
+  @tiempo = Time.now - @tweet.first.created_at                             #desde el ultimo tuit
+  if Time.now - @tweet.first.created_at > 500                              # si los tuits estan desactualizados
+    @tweet.reverse_each do |t|
+      if Tweet.find_by(tweet: t.text).nil?
+        Tweet.create(twitter_user_id: miUsuario.id, tweet: t.text)
+      end
     end
   end
-end
 
-
-# Se hace una petición por los ultimos 10 tweets a la base de datos. 
-@tweets = Tweet.where(twitter_user_id: user_data.id).order(:created_at).last(10)
-erb :twitter_handle
+  # Se hace una petición por los ultimos 10 tweets a la base de datos. 
+  @tweets = Tweet.where(twitter_user_id: miUsuario.id).order(:created_at).last(10)
+  erb :twitter_handle
 end
 
 post '/fetch' do
@@ -117,43 +114,36 @@ post '/fetch' do
 end
 
 post '/actualiza_lista' do
-puts "Recargar lista de tuits..."
-puts "*"*100
+  puts "Recargar lista de tuits..."
+  puts "*"*100
 
-  user_data = twitter_account.user_search(session[:username]).first
-  @tweets_c = twitter_account.user_timeline(user_data.user_name)
-  @tweets_c.reverse_each do  |t|
-    if Tweet.find_by(tweet_w: t.text).nil?
-      Tweet.create(twitter_user_id: user_data.id, tweet_w: t.text)
+  miUsuario = twitterUser_data(session[:username])
+  @tweet = twitter_account.user_timeline(miUsuario.user_name)
+  @tweet.reverse_each do |t|
+    if Tweet.find_by(tweet: t.text).nil?
+      Tweet.create(twitter_user_id: miUsuario.id, tweet: t.text)
     end
   end
 
-@tweets = Tweet.where(twitter_user_id: user_data.id).order(:created_at).last(10)
-erb :tweet_list, layout: false 
+  @tweets = Tweet.where(twitter_user_id: miUsuario.id).order(:created_at).last(10)
+  erb :tweet_list, layout: false 
 end
 
 post '/buscar' do
-  puts params[:userName]
   @busqueda = true;
 
-  user_data = twitter_account.user_search(params[:userName]).first
-  @tweets_c = twitter_account.user_timeline(user_data.user_name)
+  miUsuario = twitterUser_data(params[:userName])
+  @tweets_c = twitter_account.user_timeline(miUsuario.user_name)
   @tweets_c.reverse_each do  |t|
-    if Tweet.find_by(tweet_w: t.text).nil?
-      Tweet.create(twitter_user_id: user_data.id, tweet_w: t.text)
+    if Tweet.find_by(tweet: t.text).nil?
+      Tweet.create(twitter_user_id: miUsuario.id, tweet: t.text)
     end
   end
 
-  @tweets = Tweet.where(twitter_user_id: user_data.id).order(:created_at).last(10)
+  @tweets = Tweet.where(twitter_user_id: miUsuario.id).order(:created_at).last(10)
   erb :tweet_list
 end
 
-post "/exit" do
-  session.delete(:username)
-  session.delete(:oauth_token)
-  session.delete(:oauth_token_secret)
-  redirect to "/"
-end
 
 get '/late/ya' do
   est = params[:estado]
@@ -189,3 +179,9 @@ get '/status/:job_id' do
   redirect to '/late/ya'
 end
 
+post "/exit" do
+  session.delete(:username)
+  session.delete(:oauth_token)
+  session.delete(:oauth_token_secret)
+  redirect to "/"
+end

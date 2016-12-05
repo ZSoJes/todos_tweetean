@@ -20,8 +20,8 @@
 <br><br>
 
 <div id="caja">
-  <form method="post" action="/fetch" id="twitter_handle"> <!-- action="/fetch"-->
-    <input type="text" name="userName" value="<%= @user %>" readonly>
+  <form method="post" action="/fetch" id="twitter_handle">
+    <input type="text" name="userName" value="<%= session[:username] %>" readonly>
     <textarea id="tuit" name="mensaje" placeholder="Comenatrio"></textarea>
     <br>
     <input type="submit" class="boton" value="Enviar">

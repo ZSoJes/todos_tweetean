@@ -54,6 +54,18 @@ def twitter_account
   end
 end
 
+def twitterUser_data(user_name)
+  # genera el acceso a los datos del usuario, permitiendo mostrarlos con la API
+  # Llama al helper twitter_account y con la api busca todos los datos del usuario en cuestion
+  client = Twitter::REST::Client.new do |config|
+    config.consumer_key        = ENV['TWITTER_KEY']
+    config.consumer_secret     = ENV['TWITTER_SECRET']
+    config.access_token        = session[:oauth_token]
+    config.access_token_secret = session[:oauth_token_secret]
+  end
+ usuario = client.user_search(user_name).first
+end
+
 def job_is_complete(jid)
   # Revisa si la tarea se encuentra pendiente
   pending = Sidekiq::ScheduledSet.new
